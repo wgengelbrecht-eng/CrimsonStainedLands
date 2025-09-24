@@ -34,6 +34,7 @@
 *       found in the file /Tartarus/doc/tartarus.doc                       *
 ***************************************************************************/
 
+using CrimsonStainedLands.ClanSystem;
 using CrimsonStainedLands.Extensions;
 using CrimsonStainedLands.World;
 using System;
@@ -310,10 +311,45 @@ namespace CrimsonStainedLands
             // Load corpses and pits before resetting areas so pits aren't duplicated
             ItemData.LoadCorpsesAndPits();
 
+            //------------------[Clan System] <-- Search tag
+            //--- Clan System
+            if (GameSettings.ClanSystemEnabled)
+            {
+                using (new LoadTimer("ClanSystem Service loaded {0} clans", () => ClanDBService.GetNumberOfClans()))
+                {
+                    ClanDBService.EnsureFileExists();
+                    ClanDBService.LoadFromFile();
+                    if (ClanDBService.hasErrorMsgs())
+                    {
+                        Console.WriteLine(ClanDBService.GetErrorMsgsAndClearBuffer());
+                        Console.WriteLine("[Clan System] has been disabled.");
+                        GameSettings.ClanSystemEnabled = false; //Run server without a clan system.
+                    }
+                }
+            }
+            //--- End Clan System
+            //--- Pvp 
+            if (GameSettings.PvpSystemEnabled)
+            {
+                using (new LoadTimer("ClanSystem PVP Servive loaded {0} rooms", () => PvpService.GetNumberOfRooms()))
+                {
+                    PvpService.EnsureFileExists();
+                    PvpService.LoadFromFile();
+                    if (PvpService.hasErrorMsgs())
+                    {
+                        Console.WriteLine(PvpService.GetErrorMsgsAndClearBuffer());
+                        Console.WriteLine("[Pvp Service] has been disabled.");
+                        GameSettings.PvpSystemEnabled = false; //Run server without a pvp system.
+                    }
+                }
+            }
+            //--- End Pvp 
+            //--------------------------------- End
         }
+        
         private void launch(GameInfo state)
         {
-            
+
             try
             {
                 var connectionManagerTask = SetupListeningSocket(state);

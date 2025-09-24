@@ -1,4 +1,5 @@
-﻿using CrimsonStainedLands.Extensions;
+﻿using CrimsonStainedLands.ClanSystem;
+using CrimsonStainedLands.Extensions;
 using CrimsonStainedLands.World;
 using System;
 using System.Collections.Generic;
@@ -531,8 +532,6 @@ namespace CrimsonStainedLands
                                     tempItemList[itemshow] = 1;
                                 //    carrying.AppendLine();
                             }
-
-
                         }
                         StringBuilder carrying = new StringBuilder();
                         foreach (var itemkvp in tempItemList)
@@ -550,9 +549,14 @@ namespace CrimsonStainedLands
 
                             if (ch.IsAffected(AffectFlags.DarkVision) || ch.IsAffected(AffectFlags.Infrared) || ch.IsAffected(AffectFlags.NightVision) || !IsDark)
                             {
+                                //--- [Clan System] <--- Search tag
+                                string appendPvpStatus = "";
+                                if(GameSettings.PvpSystemEnabled)
+                                    if (PvpService.IsPlayerPvpFlagOn(person.Name, out string clanName))
+                                        appendPvpStatus += $"(\\rPvP ON\\x) (Clan: {clanName})";
+                                //--------------------- End
 
-
-                                ch.send(person.DisplayFlags(ch)); // send separate so act capitalizes first character
+                                ch.send(person.DisplayFlags(ch) + appendPvpStatus); // send separate so act capitalizes first character
                                 ch.Act(person.GetLongDescription(ch).Trim() + "\r\n");
                             }
                         }
