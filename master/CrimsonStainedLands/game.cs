@@ -312,38 +312,60 @@ namespace CrimsonStainedLands
             ItemData.LoadCorpsesAndPits();
 
             //------------------[Clan System] <-- Search tag
-            //--- Clan System
+            //--- Clan Db
+            ClanDBService.EnsureFileExists(out string errMsgEnsureFileExists);
+            if (errMsgEnsureFileExists != "")
+            {
+                Console.WriteLine(errMsgEnsureFileExists);
+                Console.WriteLine("[Clan System] has been disabled.");
+                GameSettings.ClanSystemEnabled = false; //Run server without a clan system.
+            }
+            //--- Clans
             if (GameSettings.ClanSystemEnabled)
             {
                 using (new LoadTimer("ClanSystem Service loaded {0} clans", () => ClanDBService.GetNumberOfClans()))
                 {
-                    ClanDBService.EnsureFileExists();
-                    ClanDBService.LoadFromFile();
-                    if (ClanDBService.hasErrorMsgs())
+                    ClanDBService.ReadFromFileClans(out string errMsgReadFromFileClans);
+                    if (errMsgReadFromFileClans != "")
                     {
-                        Console.WriteLine(ClanDBService.GetErrorMsgsAndClearBuffer());
+                        Console.WriteLine(errMsgReadFromFileClans);
                         Console.WriteLine("[Clan System] has been disabled.");
                         GameSettings.ClanSystemEnabled = false; //Run server without a clan system.
                     }
                 }
             }
-            //--- End Clan System
-            //--- Pvp 
-            if (GameSettings.PvpSystemEnabled)
+            //--- End Clans 
+            //--- Clan Rooms
+            if (GameSettings.ClanSystemEnabled)
             {
-                using (new LoadTimer("ClanSystem PVP Servive loaded {0} rooms", () => PvpService.GetNumberOfRooms()))
-                {
-                    PvpService.EnsureFileExists();
-                    PvpService.LoadFromFile();
-                    if (PvpService.hasErrorMsgs())
+                using (new LoadTimer("ClanSystem Service loaded {0} clan rooms", () => ClanDBService.getNumberOfClanRooms()))
+                { 
+                    ClanDBService.ReadFromFileClanRooms(out string errMsgReadFromClanRooms);
+                    if (errMsgReadFromClanRooms != "")
                     {
-                        Console.WriteLine(PvpService.GetErrorMsgsAndClearBuffer());
-                        Console.WriteLine("[Pvp Service] has been disabled.");
-                        GameSettings.PvpSystemEnabled = false; //Run server without a pvp system.
+                        Console.WriteLine(errMsgReadFromClanRooms);
+                        Console.WriteLine("[Clan System] has been disabled.");
+                        GameSettings.ClanSystemEnabled = false; //Run server without a clan system.
                     }
                 }
             }
-            //--- End Pvp 
+            //--- End Clan rooms
+            //--- Pvp rooms
+            if (GameSettings.PvpSystemEnabled)
+                {
+                    using (new LoadTimer("ClanSystem PVP Service loaded {0} rooms", () => PvpService.GetNumberOfRooms()))
+                    {
+                        PvpService.EnsureFileExists(out string errMsgEnsurePvpFileExists);
+                        PvpService.ReadFromFilePvpRooms(out string errMsgLoadFilePvp);
+                        if (errMsgEnsurePvpFileExists != "" || errMsgLoadFilePvp != "")
+                        {
+                            Console.WriteLine(errMsgEnsurePvpFileExists + errMsgLoadFilePvp);
+                            Console.WriteLine("[Pvp Service] has been disabled.");
+                            GameSettings.PvpSystemEnabled = false; //Run server without a pvp system.
+                        }
+                    }
+                }
+            //--- End Pvp rooms
             //--------------------------------- End
         }
         

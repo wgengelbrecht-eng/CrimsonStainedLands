@@ -7,8 +7,9 @@ namespace CrimsonStainedLands.ClanSystem
     public static class ClanDBService
     {
         private static readonly List<Clan> _clans = [];
-        //Universal Msg buffer for error messages and feedback. 
-        private static readonly List<string> _errorMsgBuffer = [];
+        private static readonly List<ClanRoom> _clanRooms = [];
+        private static readonly List<ClanCreationRequest> _clanCreationRequets = [];
+        private static readonly List<string> _errorMsgBuffer = [];// Universal Msg buffer for error messages and feedback. 
 
 
         public static string GetErrorMsgsAndClearBuffer()
@@ -30,7 +31,7 @@ namespace CrimsonStainedLands.ClanSystem
             {
                 msgs += msg + "\n";
             }
-            
+
             return msgs;
         }
 
@@ -48,70 +49,59 @@ namespace CrimsonStainedLands.ClanSystem
         }
 
 
-        public static bool addClan(Clan clan)
+        public static bool addClan(Clan clan, out string errMsg)
         {
+            errMsg = "";
             if (!ClanExists(clan.Name))
             {
                 _clans.Add(clan);
-                if (!BackUpToFile())
-                {
-                    return false;
-                }
                 return true;
             }
             else
             {
-                addErrorMsg("This clan already exists.");
+                errMsg = "This clan already exists.";
                 return false;
             }
         }
 
-        public static bool removeClan(string clanName)
+        public static bool removeClan(string clanName, out string errMsg)
         {
-
+            errMsg = "";
             int placement = 0;
             foreach (Clan clan in _clans)
             {
                 if (clan.Name.Equals(clanName, StringComparison.CurrentCultureIgnoreCase))
                 {
                     _clans.RemoveAt(placement);
-                    if (!BackUpToFile())
-                    {
-                        return false;
-                    }
                     return true;
                 }
                 placement++;
             }
-            addErrorMsg("No clan by that name was found.");
+            errMsg = "No clan by that name was found.";
             return false;
         }
 
-        public static bool UpdateClanRecord(Clan clan)
+
+        public static bool UpdateClanRecord(Clan clan, out string errMsg)
         {
+            errMsg = "";
             foreach (Clan clanEntry in _clans)
             {
                 if (clanEntry.Name.Equals(clan.Name, StringComparison.CurrentCultureIgnoreCase))
                 {
                     _clans.Remove(clanEntry);
                     _clans.Add(clan);
-                    if (!BackUpToFile())
-                    {
-                        //undo
-                        _clans.Remove(clan);
-                        _clans.Add(clanEntry);
-                        return false;
-                    }
                     return true;
                 }
             }
-            addErrorMsg("That clan does not exist.");
+            errMsg = "That clan does not exist.";
             return false;
         }
 
 
-        public static Clan GetClan(string clanName)
+        public static Clan GetClan(string clanName, out string errMsg)
         {
+            errMsg = "";
             foreach (Clan clan in _clans)
             {
                 if (clan.Name.Equals(clanName, StringComparison.CurrentCultureIgnoreCase))
@@ -119,14 +109,15 @@ namespace CrimsonStainedLands.ClanSystem
                     return clan;
                 }
             }
-            addErrorMsg("No Clan by that name found.");
+            errMsg = "No Clan by that name found.";
             Clan retClan = null;
             return retClan;
         }
 
 
-        public static Clan GetClanByPlayerName(string playerName)
+        public static Clan GetClanByPlayerName(string playerName, out string errMsg)
         {
+            errMsg = "";
             Clan retClan = null;
             foreach (Clan clan in _clans)
             {
@@ -139,7 +130,7 @@ namespace CrimsonStainedLands.ClanSystem
                 }
             }
             // Player  not found
-            addErrorMsg("No clans have that player as a member.");
+            errMsg = "No clans have that player as a member.";
             return retClan;
         }
 
@@ -163,8 +154,9 @@ namespace CrimsonStainedLands.ClanSystem
         }
 
 
-        public static bool BackUpToFile()
+        public static bool WriteToFileClans(out string errMsg)
         {
+            errMsg = "";
             try
             {
                 var serializer = new XmlSerializer(typeof(List<Clan>));
@@ -177,36 +169,124 @@ namespace CrimsonStainedLands.ClanSystem
             }
             catch (UnauthorizedAccessException ex)
             {
-                addErrorMsg($"Error: Access to the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}' is denied.\n{ex.Message}");
+                errMsg += $"Error: Access to the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}' is denied.\n{ex.Message}";
 
             }
             catch (DirectoryNotFoundException ex)
             {
-                addErrorMsg($"Error: The directory for the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}' was not found.{ex.Message}");
+                errMsg += $"Error: The directory for the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}' was not found.{ex.Message}";
             }
             catch (IOException ex)
             {
-                addErrorMsg($"Error: A file I/O error occurred while writing to '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}'.\n{ex.Message}");
+                errMsg += $"Error: A file I/O error occurred while writing to '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}'.\n{ex.Message}";
             }
             catch (InvalidOperationException ex)
             {
-                addErrorMsg($"Error: An XML serialization error occurred.\n");
+                errMsg += $"Error: An XML serialization error occurred.\n";
                 // Check the inner exception for the real cause
                 if (ex.InnerException != null)
                 {
-                    addErrorMsg($"Inner Exception: {ex.InnerException.Message}");
+                    errMsg += $"Inner Exception: {ex.InnerException.Message}";
                 }
             }
             catch (Exception ex) // Catch any other unexpected exceptions
             {
-                addErrorMsg($"An unexpected error occurred during serialization: {ex.Message}");
+                errMsg += $"An unexpected error occurred during serialization: {ex.Message}";
             }
             return false;
         }
 
 
-        public static bool LoadFromFile()
+        public static bool WriteToFileClanCreationRequests(out string errMsg)
         {
+            errMsg = "";
+            try
+            {
+                var serializer = new XmlSerializer(typeof(List<ClanCreationRequest>));
+
+                using (var writer = new StreamWriter(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanCreationRequestFile)))
+                {
+                    serializer.Serialize(writer, new List<ClanCreationRequest>(_clanCreationRequets));
+                }
+                return true;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                errMsg += $"Error: Access to the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanCreationRequestFile)}' is denied.\n{ex.Message}";
+
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                errMsg += $"Error: The directory for the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanCreationRequestFile)}' was not found.{ex.Message}";
+            }
+            catch (IOException ex)
+            {
+                errMsg += $"Error: A file I/O error occurred while writing to '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanCreationRequestFile)}'.\n{ex.Message}";
+            }
+            catch (InvalidOperationException ex)
+            {
+                errMsg += $"Error: An XML serialization error occurred.\n";
+                // Check the inner exception for the real cause
+                if (ex.InnerException != null)
+                {
+                    errMsg += $"Inner Exception: {ex.InnerException.Message}";
+                }
+            }
+            catch (Exception ex) // Catch any other unexpected exceptions
+            {
+                errMsg += $"An unexpected error occurred during serialization: {ex.Message}";
+            }
+            return false;
+        }
+
+
+        public static bool WriteToFileClanRooms(out string errMsg)
+        {
+            errMsg = "";
+            try
+            {
+                var serializer = new XmlSerializer(typeof(List<ClanRoom>));
+
+                using (var writer = new StreamWriter(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanRoomsFile)))
+                {
+                    serializer.Serialize(writer, new List<ClanRoom>(_clanRooms));
+                }
+                return true;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                errMsg += $"Error: Access to the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanRoomsFile)}' is denied.\n{ex.Message}";
+
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                errMsg += $"Error: The directory for the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanRoomsFile)}' was not found.{ex.Message}";
+            }
+            catch (IOException ex)
+            {
+                errMsg += $"Error: A file I/O error occurred while writing to '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanRoomsFile)}'.\n{ex.Message}";
+            }
+            catch (InvalidOperationException ex)
+            {
+                errMsg += $"Error: An XML serialization error occurred.\n";
+                // Check the inner exception for the real cause
+                if (ex.InnerException != null)
+                {
+                    errMsg += $"Inner Exception: {ex.InnerException.Message}";
+                }
+            }
+            catch (Exception ex) // Catch any other unexpected exceptions
+            {
+                errMsg += $"An unexpected error occurred during serialization: {ex.Message}";
+            }
+            return false;
+        }
+
+
+
+        public static bool ReadFromFileClans(out string errMsg)
+        {
+            errMsg = "";
             try
             {
                 var serializer = new XmlSerializer(typeof(List<Clan>));
@@ -219,35 +299,134 @@ namespace CrimsonStainedLands.ClanSystem
                 _clans.Clear();
                 foreach (Clan clan in readList)
                 {
-                    addClan(clan);
+                    addClan(clan,out string errMsgAddClan);
                 }
                 return true;
             }
             catch (UnauthorizedAccessException ex)
             {
-                addErrorMsg($"Error: Access to the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}' is denied.\n{ex.Message}");
+                errMsg += $"Error: Access to the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}' is denied.\n{ex.Message}";
 
             }
             catch (DirectoryNotFoundException ex)
             {
-                addErrorMsg($"Error: The directory for the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}' was not found.{ex.Message}");
+                errMsg += $"Error: The directory for the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}' was not found.{ex.Message}";
             }
             catch (IOException ex)
             {
-                addErrorMsg($"Error: A file I/O error occurred while writing to '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}'.\n{ex.Message}");
+                errMsg += $"Error: A file I/O error occurred while writing to '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)}'.\n{ex.Message}";
             }
             catch (InvalidOperationException ex)
             {
-                addErrorMsg($"Error: An XML serialization error occurred.\n");
+                errMsg += $"Error: An XML serialization error occurred.\n";
                 // Check the inner exception for the real cause
                 if (ex.InnerException != null)
                 {
-                    addErrorMsg($"Inner Exception: {ex.InnerException.Message}");
+                    errMsg += $"Inner Exception: {ex.InnerException.Message}";
                 }
             }
             catch (Exception ex) // Catch any other unexpected exceptions
             {
-                addErrorMsg($"An unexpected error occurred during serialization: {ex.Message}");
+                errMsg += $"An unexpected error occurred during serialization: {ex.Message}";
+            }
+            return false;
+        }
+
+
+
+        public static bool ReadFromFileClanCreationRequests(out string errMsg)
+        {
+            errMsg = "";
+            try
+            {
+                var serializer = new XmlSerializer(typeof(List<ClanCreationRequest>));
+                List<ClanCreationRequest> readList = new List<ClanCreationRequest>();
+                using (var reader = new StreamReader(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanCreationRequestFile)))
+                {
+                    readList = (List<ClanCreationRequest>)serializer.Deserialize(reader);
+                }
+
+                _clanCreationRequets.Clear();
+                foreach (ClanCreationRequest request in readList)
+                {
+                    addClanRequest(request);
+                }
+                return true;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                errMsg += $"Error: Access to the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanCreationRequestFile)}' is denied.\n{ex.Message}";
+
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                errMsg += $"Error: The directory for the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanCreationRequestFile)}' was not found.{ex.Message}";
+            }
+            catch (IOException ex)
+            {
+                errMsg += $"Error: A file I/O error occurred while writing to '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanCreationRequestFile)}'.\n{ex.Message}";
+            }
+            catch (InvalidOperationException ex)
+            {
+                errMsg += $"Error: An XML serialization error occurred.\n";
+                // Check the inner exception for the real cause
+                if (ex.InnerException != null)
+                {
+                    errMsg += $"Inner Exception: {ex.InnerException.Message}";
+                }
+            }
+            catch (Exception ex) // Catch any other unexpected exceptions
+            {
+                errMsg += $"An unexpected error occurred during serialization: {ex.Message}";
+            }
+            return false;
+        }
+
+
+        public static bool ReadFromFileClanRooms(out string errMsg)
+        {
+            errMsg = "";
+            try
+            {
+                var serializer = new XmlSerializer(typeof(List<ClanRoom>));
+                List<ClanRoom> readList = new List<ClanRoom>();
+                using (var reader = new StreamReader(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanRoomsFile)))
+                {
+                    readList = (List<ClanRoom>)serializer.Deserialize(reader);
+                }
+
+                _clanCreationRequets.Clear();
+                foreach (ClanRoom room in readList)
+                {
+                    addClanRoom(room);
+                }
+                return true;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                errMsg += $"Error: Access to the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanRoomsFile)}' is denied.\n{ex.Message}";
+
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                errMsg += $"Error: The directory for the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanRoomsFile)}' was not found.{ex.Message}";
+            }
+            catch (IOException ex)
+            {
+                errMsg += $"Error: A file I/O error occurred while writing to '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanRoomsFile)}'.\n{ex.Message}";
+            }
+            catch (InvalidOperationException ex)
+            {
+                errMsg += $"Error: An XML serialization error occurred.\n";
+                // Check the inner exception for the real cause
+                if (ex.InnerException != null)
+                {
+                    errMsg += $"Inner Exception: {ex.InnerException.Message}";
+                }
+            }
+            catch (Exception ex) // Catch any other unexpected exceptions
+            {
+                errMsg += $"An unexpected error occurred during serialization: {ex.Message}";
             }
             return false;
         }
@@ -259,9 +438,9 @@ namespace CrimsonStainedLands.ClanSystem
         }
 
 
-        public static void EnsureFileExists()
+        public static void EnsureFileExists(out string errMsg)
         {
-
+            errMsg = "";
             try
             {
                 Directory.CreateDirectory(GameSettings.ClanSystemDataFolder);
@@ -269,18 +448,74 @@ namespace CrimsonStainedLands.ClanSystem
                 if (!File.Exists(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemDataFile)))
                 {
                     //Create a clean|empty xml document.
-                    BackUpToFile();
-
+                    WriteToFileClans(out string errMsgWriteToFileClans);
+                    if (errMsgWriteToFileClans != "")
+                        errMsg += errMsgWriteToFileClans;
+                }
+                if (!File.Exists(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanCreationRequestFile)))
+                {
+                    //Create a clean|empty xml document.
+                    WriteToFileClanCreationRequests(out string errMsgWriteToFileClanCreationRequests);
+                    if (errMsgWriteToFileClanCreationRequests != "")
+                        errMsg += errMsgWriteToFileClanCreationRequests;
+                }
+                if (!File.Exists(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanRoomsFile)))
+                {
+                    //Create a clean|empty xml document.
+                    WriteToFileClanRooms(out string errMsgWriteToFileClanRooms);
+                    if (errMsgWriteToFileClanRooms != "")
+                        errMsg += errMsgWriteToFileClanRooms;
                 }
 
             }
             catch (Exception ex)
             {
-                addErrorMsg($"Exception occured in trying to ensure that folder : {GameSettings.ClanSystemDataFolder}" +
-                            $" and file : {GameSettings.ClanSystemDataFile} exists. Exception: {ex.Message}");
+                errMsg += $"Exception occured in trying to ensure that folder : {GameSettings.ClanSystemDataFolder}" +
+                            $" and its contents exist. Exception: {ex.Message}";
             }
         }
-        
+
+
+        public static void addClanRequest(ClanCreationRequest request)
+        {
+            _clanCreationRequets.Add(request);
+        }
+
+        public static void removeClanRequest(ClanCreationRequest request)
+        {
+            _clanCreationRequets.Remove(request);
+        }
+
+        public static List<ClanCreationRequest> getAllClanRequests()
+        {
+            return _clanCreationRequets;
+        }
+
+        public static int getNumberOfClanRequests()
+        {
+            return _clanCreationRequets.Count;
+        }
+
+
+        public static void addClanRoom(ClanRoom clanRoom)
+        {
+            _clanRooms.Add(clanRoom);
+        }
+
+        public static void removeClanRoom(ClanRoom clanRoom)
+        {
+            _clanRooms.Remove(clanRoom);
+        }
+
+        public static List<ClanRoom> getAllClanRooms()
+        {
+            return _clanRooms;
+        }
+
+        public static int getNumberOfClanRooms()
+        {
+            return _clanRooms.Count;
+        }
         
     }
 }
