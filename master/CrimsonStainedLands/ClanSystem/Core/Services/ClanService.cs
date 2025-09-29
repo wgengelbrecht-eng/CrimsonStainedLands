@@ -7,8 +7,6 @@ namespace CrimsonStainedLands.ClanSystem
 {
     public static class ClanService
     {
-
-
         public static void CommandCreateClan(Character ch, string arguments)
         {
             if (ch.Level < GameSettings.MinLevelRequiredForClanCreation)
@@ -1149,94 +1147,94 @@ namespace CrimsonStainedLands.ClanSystem
             // Only send this help list to 'Imm|Admins'
             if (ch.Level >= GameSettings.MinLevelRequiredForClanCreation)
             {
-                clanHelpAdminPlayer = $"\\rHere follows the clan commands for Admin players.\\x\n" +
+                clanHelpAdminPlayer =   $"\\rHere follows the clan commands for Admin players.\\x\n" +
                                         $"\\g{"list",-30}\\x| {"List all clans.",-100}\n" +
                                         $"\\g{"members",-30}\\x| {"List the members with their ranks of a specified clan.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan members 'clan name'",-100}\n" +
 
-                                        $"\\g{"create_clan",-30}\\x| {"Create a new clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan create_clan 'clan name' 'clan leader' 'clan tag'",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan create_clan 'clan name'",-100}\n" +
-                                        $"\\g{"delete_clan",-30}\\x| {"Delete a clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan delete_clan 'clan name'",-100}\n" +
-                                        $"\\g{"set_tag",-30}\\x| {"Set or update a clan tag.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan set_tag 'clan name' 'clan tag'",-100}\n" +
-                                        $"\\g{"update_name",-30}\\x| {"Update|Change the name of a clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan update_name 'clan name' 'new clan name'",-100}\n" +
+                                        $"\\g{"add-clan",-30}\\x| {"Create a new clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan add-clan 'clan name' 'clan leader' 'clan tag'",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan del-clan 'clan name'",-100}\n" +
+                                        $"\\g{"rem-clan",-30}\\x| {"Delete|remove a clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan rem-clan 'clan name'",-100}\n" +
+                                        $"\\g{"set-tag",-30}\\x| {"Set or update a clan tag.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan set-tag 'clan name' 'clan tag'",-100}\n" +
+                                        $"\\g{"update-name",-30}\\x| {"Update|Change the name of a clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan update-name 'clan name' 'new clan name'",-100}\n" +
 
-                                        $"\\g{"add_member",-30}\\x| {"Add a new player to a clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan add_member 'clan name' 'player name'",-100}\n" +
-                                        $"\\g{"rem_member",-30}\\x| {"Remove a player from a clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan rem_member 'clan name' 'player name'",-100}\n" +
+                                        $"\\g{"add-member",-30}\\x| {"Add a new player to a clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan add-member 'clan name' 'player name'",-100}\n" +
+                                        $"\\g{"rem-member",-30}\\x| {"Remove a player from a clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan rem-member 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"promote",-30}\\x| {"Promote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan promote 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"demote",-30}\\x| {"Demote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan demote 'clan name' 'player name'",-100}\n" +
-                                        $"\\g{"member_info",-30}\\x| {"Get the rank of a player.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan member_info 'player name'",-100}\n" +
+                                        $"\\g{"member-info",-30}\\x| {"Get the rank of a player.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan member-info 'player name'",-100}\n" +
 
                                         $"\\g{"request",-30}\\x| {"Get all the current clan creation requests.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan request",-100}\n" +
-                                        $"\\g{"del_request",-30}\\x| {"Delete|remove a clan creation request of a player.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan del_request 'player name'",-100}\n" +
+                                        $"\\g{"del-request",-30}\\x| {"Delete|remove a clan creation request of a player.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan del-request 'player name'",-100}\n" +
 
-                                        $"\\g{"clan_rooms",-30}\\x| {"List all the clan assigned rooms.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan clan_rooms",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan clan_rooms 'clan name'",-100}\n" +
-                                        $"\\g{"add_room",-30}\\x| {"Assign a room to a clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan add_room 'clan name' 'room vNumber'",-100}\n" +
-                                        $"\\g{"rem_room",-30}\\x| {"Remove|Unassign a clan room from any clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan rem_room 'room vNumber'",-100}\n";
+                                        $"\\g{"clan-rooms",-30}\\x| {"List all the clan assigned rooms.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan clan-rooms",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan clan-rooms 'clan name'",-100}\n" +
+                                        $"\\g{"add-room",-30}\\x| {"Assign a room to a clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan add-room 'clan name' 'room vNumber'",-100}\n" +
+                                        $"\\g{"rem-room",-30}\\x| {"Remove|Unassign a clan room from any clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan rem-room 'room vNumber'",-100}\n";
 
                 ch.send(clanHelpAdminPlayer);
             }
             // Only send this help list to 'clan leader' ranked players
             else if (ClanService.GetPlayerRank(ch.Name) == ClanRank.Leader)
             {
-                clanHelpLeaderPlayer = $"\\rHere follows the clan commands for players of rank Leader.\\x\n" +
+                clanHelpLeaderPlayer =  $"\\rHere follows the clan commands for players of rank Leader.\\x\n" +
                                         $"\\g{"list",-30}\\x| {"List all clans.",-100}\n" +
                                         $"\\g{"members",-30}\\x| {"List the members with their ranks of a specified clan.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan members 'clan name'",-100}\n" +
-                                        $"\\g{"set_tag",-30}\\x| {"Set or update a clan tag.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan set_tag 'clan name' 'clan tag'",-100}\n" +
-                                        $"\\g{"update_name",-30}\\x| {"Update|Change the name of a clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan update_name 'clan name' 'new clan name'",-100}\n" +
-                                        $"\\g{"add_member",-30}\\x| {"Add a new player to a clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan add_member 'clan name' 'player name'",-100}\n" +
-                                        $"\\g{"rem_member",-30}\\x| {"Remove a player from a clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan rem_player 'clan name' 'player name'",-100}\n" +
+                                        $"\\g{"set-tag",-30}\\x| {"Set or update a clan tag.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan set-tag 'clan name' 'clan tag'",-100}\n" +
+                                        $"\\g{"update-name",-30}\\x| {"Update|Change the name of a clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan update-name 'clan name' 'new clan name'",-100}\n" +
+                                        $"\\g{"add-member",-30}\\x| {"Add a new player to a clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan add-member 'clan name' 'player name'",-100}\n" +
+                                        $"\\g{"rem-member",-30}\\x| {"Remove a player from a clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan rem-player 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"promote",-30}\\x| {"Promote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan promote 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"demote",-30}\\x| {"Demote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan demote 'clan name' 'player name'",-100}\n" +
-                                        $"\\g{"member_info",-30}\\x| {"Get the rank of a player.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan member_info 'player name'",-100}\n";
+                                        $"\\g{"member-info",-30}\\x| {"Get the rank of a player.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan member-info 'player name'",-100}\n";
 
                 ch.send(clanHelpLeaderPlayer);
             }
             // Only send this help list to clan members of rank 'captain'
             else if (ClanService.GetPlayerRank(ch.Name) == ClanRank.Leader - 1)
             {
-                clanHelpLeaderPlayer = $"\\rHere follows the clan commands for players of rank Captain.\\x\n" +
+                clanHelpLeaderPlayer =  $"\\rHere follows the clan commands for players of rank Captain.\\x\n" +
                                         $"\\g{"list",-30}\\x| {"List all clans.",-100}\n" +
                                         $"\\g{"members",-30}\\x| {"List the members with their ranks of a specified clan.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan members 'clan name'",-100}\n" +
-                                        $"\\g{"add_member",-30}\\x| {"Add a new player to a clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan add_member 'clan name' 'player name'",-100}\n" +
-                                        $"\\g{"rem_member",-30}\\x| {"Remove a player from a clan.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan rem_member 'clan name' 'player name'",-100}\n" +
+                                        $"\\g{"add-member",-30}\\x| {"Add a new player to a clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan add-member 'clan name' 'player name'",-100}\n" +
+                                        $"\\g{"rem-member",-30}\\x| {"Remove a player from a clan.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan rem-member 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"promote",-30}\\x| {"Promote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan promote 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"demote",-30}\\x| {"Demote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan demote 'clan name' 'player name'",-100}\n" +
-                                        $"\\g{"member_info",-30}\\x| {"Get the rank of a player.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan member_info 'player name'",-100}\n";
+                                        $"\\g{"member-info",-30}\\x| {"Get the rank of a player.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan member-info 'player name'",-100}\n";
 
                 ch.send(clanHelpLeaderPlayer);
             }
@@ -1247,13 +1245,13 @@ namespace CrimsonStainedLands.ClanSystem
                                         $"\\g{"list",-30}\\x| {"List all clans.",-100}\n" +
                                         $"\\g{"members",-30}\\x| {"List the members with their ranks of a specified clan.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan members 'clan name'",-100}\n" +
-                                        $"\\g{"member_info",-30}\\x| {"Get the rank of a player.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan member_info 'player name'",-100}\n" +
+                                        $"\\g{"member-info",-30}\\x| {"Get the rank of a player.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan member-info 'player name'",-100}\n" +
                                         $"\\g{"request",-30}\\x| {"Request the immortals to create a clan for you.",-100}\n" +
                                         $"{"",-30}| {"You will have to be level 30 and above to do so.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan request 'clan name' 'clan tag'",-100}\n" +
-                                        $"\\g{"del_request",-30}\\x| {"Delete|remove your clan creation request.",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan del_request",-100}\n";
+                                        $"\\g{"del-request",-30}\\x| {"Delete|remove your clan creation request.",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan del-request",-100}\n";
 
                 ch.send(clanHelpNonAdminPlayer);
             }

@@ -29,32 +29,32 @@ namespace CrimsonStainedLands.ClanSystem
                             ClanService.CommandGetClanMemberList(ch, remainingArgs);
                             break;
                         }
-                    case "create_clan":
+                    case "add-clan":
                         {
                             ClanService.CommandCreateClan(ch, remainingArgs);
                             break;
                         }
-                    case "delete_clan":
+                    case "rem-clan":
                         {
                             ClanService.CommandRemoveClan(ch, remainingArgs);
                             break;
                         }
-                    case "set_tag":
+                    case "set-tag":
                         {
                             ClanService.CommandSetClanTag(ch, remainingArgs);
                             break;
                         }
-                    case "update_name":
+                    case "update-name":
                         {
                             ClanService.CommandUpdateClanName(ch, remainingArgs);
                             break;
                         }
-                    case "add_member":
+                    case "add-member":
                         {
                             ClanService.CommandAddMember(ch, remainingArgs);
                             break;
                         }
-                    case "rem_member":
+                    case "rem-member":
                         {
                             ClanService.CommandRemoveMember(ch, remainingArgs);
                             break;
@@ -69,7 +69,7 @@ namespace CrimsonStainedLands.ClanSystem
                             ClanService.CommandDemoteMember(ch, remainingArgs);
                             break;
                         }
-                    case "member_info":
+                    case "member-info":
                         {
                             ClanService.CommandGetMemberInfo(ch, remainingArgs);
                             break;
@@ -79,22 +79,22 @@ namespace CrimsonStainedLands.ClanSystem
                             ClanService.CommandClanRequestCreation(ch, remainingArgs);
                             break;
                         }
-                    case "del_request":
+                    case "del-request":
                         {
                             ClanService.CommandDeleteClanRequest(ch, remainingArgs);
                             break;
                         }
-                    case "clan_rooms":
+                    case "clan-rooms":
                         {
                             ClanService.CommandListClanRooms(ch, remainingArgs);
                             break;
                         }
-                    case "add_room":
+                    case "add-room":
                         {
                             ClanService.CommandCreateClanRoom(ch, remainingArgs);
                             break;
                         }
-                    case "rem_room":
+                    case "rem-room":
                         {
                             ClanService.CommandDeleteClanRoom(ch, remainingArgs);
                             break;

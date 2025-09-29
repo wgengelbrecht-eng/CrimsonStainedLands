@@ -353,13 +353,12 @@ namespace CrimsonStainedLands
             //--- Pvp rooms
             if (GameSettings.PvpSystemEnabled)
                 {
-                    using (new LoadTimer("ClanSystem PVP Service loaded {0} rooms", () => PvpService.GetNumberOfRooms()))
+                    using (new LoadTimer("ClanSystem PVP Service loaded {0} rooms", () => ClanDBService.GetNumberOfPvpEnabledRooms()))
                     {
-                        PvpService.EnsureFileExists(out string errMsgEnsurePvpFileExists);
-                        PvpService.ReadFromFilePvpRooms(out string errMsgLoadFilePvp);
-                        if (errMsgEnsurePvpFileExists != "" || errMsgLoadFilePvp != "")
+                        ClanDBService.ReadFromFilePvpRooms(out string errMsgLoadFilePvp);
+                        if (errMsgLoadFilePvp != "")
                         {
-                            Console.WriteLine(errMsgEnsurePvpFileExists + errMsgLoadFilePvp);
+                            Console.WriteLine(errMsgLoadFilePvp);
                             Console.WriteLine("[Pvp Service] has been disabled.");
                             GameSettings.PvpSystemEnabled = false; //Run server without a pvp system.
                         }

@@ -10,10 +10,10 @@ namespace CrimsonStainedLands.ClanSystem
         /// This function uses the Utilty.OneArgument for it's core but returns a bool depending on if a next word 
         /// was available or not.
         /// </summary>
-        /// <param name="arguments">String with multiple words of wich the first word needs to be removed.</param>
+        /// <param name="arguments">String with multiple words of which the first word needs to be removed.</param>
         /// <param name="nextArg">Returns the next word from |arguments|, returns "" if none. </param>
         /// <param name="remainingArgs">Returns the remaining words after the first word has been removed.</param>
-        /// <returns>True if a next word was availble, false if no more words where available.</returns>
+        /// <returns>True if a next word was availble, False if no more words where available.</returns>
         public static bool getNextArg(string arguments, out string nextArg, out string remainingArgs)
         {
             nextArg = "";

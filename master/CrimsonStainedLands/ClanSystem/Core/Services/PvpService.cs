@@ -8,10 +8,10 @@ namespace CrimsonStainedLands.ClanSystem
 {
     public static class PvpService
     {
-        private static readonly List<PvpEnabledMember> _pvpEnabledPlayers = []; //Quick access list
-        private static readonly List<PvpEnabledRoom> _pvpEnabledRooms = [];
-        private static readonly List<Character> _activePvpFightersOriginalState = [];
-        private static readonly List<string> _isInActivePvpFightList = [];
+        private static readonly List<PvpEnabledMember> _pvpEnabledPlayers = []; //--- Quick access list (Does not save to file)
+        //private static readonly List<PvpEnabledRoom> _pvpEnabledRooms = [];//--- Moved to ClanDbService since it saves to file
+        private static readonly List<Character> _activePvpFightersOriginalState = []; //--- (Does not save to file)
+        private static readonly List<string> _isInActivePvpFightList = []; //--- (Does not save to file)
 
 
         // Switches between on and off, if player is on this list it is on
@@ -77,7 +77,7 @@ namespace CrimsonStainedLands.ClanSystem
                 bool success = int.TryParse(roomVnum, out int roomVnumber);
                 if (success)
                 {
-                    if (IsRoomInPvpEnabledRoomList(roomVnumber))
+                    if (ClanDBService.IsRoomInPvpEnabledRoomList(roomVnumber))
                     {
                         ch.send("That room is already in the PvP enabled room list.");
                         return;
@@ -91,8 +91,8 @@ namespace CrimsonStainedLands.ClanSystem
                             RoomVnum = roomVnumber,
                         };
 
-                        _pvpEnabledRooms.Add(room);
-                        WriteToFilePvpRooms(out string errMsg);
+                        ClanDBService.AddPvpEnabledRoom(room);
+                        ClanDBService.WriteToFilePvpRooms(out string errMsg);// Backup changes
                         if (errMsg != "")
                         {
                             ch.send($"Something went wrong : {errMsg}");
@@ -130,20 +130,9 @@ namespace CrimsonStainedLands.ClanSystem
                 bool success = int.TryParse(roomVnum, out int roomVnumber);
                 if (success)
                 {
-                    if (IsRoomInPvpEnabledRoomList(roomVnumber))
+                    if (ClanDBService.IsRoomInPvpEnabledRoomList(roomVnumber))
                     {
-                        int count = 0;
-                        foreach (PvpEnabledRoom room in _pvpEnabledRooms)
-                        {
-                            if (room.RoomVnum == roomVnumber)
-                            {
-                                _pvpEnabledRooms.RemoveAt(count);
-                                WriteToFilePvpRooms(out string errMsg);
-                                ch.send("Room remoived");
-                                return;
-                            }
-                            count++;
-                        }
+                        ClanDBService.RemovePvpEnabledRoom(roomVnumber);
                     }
                     else
                     {
@@ -162,31 +151,13 @@ namespace CrimsonStainedLands.ClanSystem
         }
 
 
-        public static int GetNumberOfRooms()
-        {
-            return _pvpEnabledRooms.Count;
-        }
-
-
-        public static bool IsRoomInPvpEnabledRoomList(int vNum)
-        {
-            foreach (PvpEnabledRoom room in _pvpEnabledRooms)
-            {
-                if (room.RoomVnum == vNum)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
 
         public static void CommandListPvpRooms(Character ch, string arguments)
         {
             if (ch.Level >= GameSettings.MinLevelRequiredForClanCreation)// List for admin player
             {
                 string retString = "";
-                foreach (PvpEnabledRoom room in _pvpEnabledRooms)
+                foreach (PvpEnabledRoom room in ClanDBService.GetAllPvpEnabledRooms())
                 {
                     RoomData curRoom;
                     if (RoomData.Rooms.TryGetValue(room.RoomVnum, out curRoom))
@@ -213,7 +184,7 @@ namespace CrimsonStainedLands.ClanSystem
             else // List for non admin players
             {
                 string retString = "";
-                foreach (PvpEnabledRoom room in _pvpEnabledRooms)
+                foreach (PvpEnabledRoom room in ClanDBService.GetAllPvpEnabledRooms())
                 {
                     RoomData curRoom;
                     if (RoomData.Rooms.TryGetValue(room.RoomVnum, out curRoom))
@@ -236,121 +207,6 @@ namespace CrimsonStainedLands.ClanSystem
                 {
                     ch.send("There are currently no PvP enabled rooms.");
                 }
-            }
-        }
-
-
-        public static bool ReadFromFilePvpRooms(out string errMsg)
-        {
-            errMsg = "";
-            try
-            {
-                var serializer = new XmlSerializer(typeof(List<PvpEnabledRoom>));
-                List<PvpEnabledRoom> readList = new List<PvpEnabledRoom>();
-                using (var reader = new StreamReader(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemPvpRoomFile)))
-                {
-                    readList = (List<PvpEnabledRoom>)serializer.Deserialize(reader);
-                }
-
-                _pvpEnabledRooms.Clear();
-                foreach (PvpEnabledRoom room in readList)
-                {
-                    _pvpEnabledRooms.Add(room);
-                }
-                return true;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                errMsg += $"Error: Access to the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemPvpRoomFile)}' is denied.\n{ex.Message}";
-
-            }
-            catch (DirectoryNotFoundException ex)
-            {
-                errMsg += $"Error: The directory for the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemPvpRoomFile)}' was not found.{ex.Message}";
-            }
-            catch (IOException ex)
-            {
-                errMsg += $"Error: A file I/O error occurred while writing to '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemPvpRoomFile)}'.\n{ex.Message}";
-            }
-            catch (InvalidOperationException ex)
-            {
-                errMsg += $"Error: An XML serialization error occurred.\n";
-                // Check the inner exception for the real cause
-                if (ex.InnerException != null)
-                {
-                    errMsg += $"Inner Exception: {ex.InnerException.Message}";
-                }
-            }
-            catch (Exception ex) // Catch any other unexpected exceptions
-            {
-                errMsg += $"An unexpected error occurred during serialization: {ex.Message}";
-            }
-            return false;
-        }
-
-
-        public static bool WriteToFilePvpRooms(out string errMsg)
-        {
-            errMsg = "";
-            try
-            {
-                var serializer = new XmlSerializer(typeof(List<PvpEnabledRoom>));
-
-                using (var writer = new StreamWriter(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemPvpRoomFile)))
-                {
-                    serializer.Serialize(writer, new List<PvpEnabledRoom>(_pvpEnabledRooms));
-                }
-                return true;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                errMsg = $"Error: Access to the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemPvpRoomFile)}' is denied.\n{ex.Message}";
-
-            }
-            catch (DirectoryNotFoundException ex)
-            {
-                errMsg = $"Error: The directory for the path '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemPvpRoomFile)}' was not found.{ex.Message}";
-            }
-            catch (IOException ex)
-            {
-                errMsg = $"Error: A file I/O error occurred while writing to '{Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemPvpRoomFile)}'.\n{ex.Message}";
-            }
-            catch (InvalidOperationException ex)
-            {
-                errMsg = $"Error: An XML serialization error occurred.\n";
-                // Check the inner exception for the real cause
-                if (ex.InnerException != null)
-                {
-                    errMsg = $"Inner Exception: {ex.InnerException.Message}";
-                }
-            }
-            catch (Exception ex) // Catch any other unexpected exceptions
-            {
-                errMsg = $"An unexpected error occurred during serialization: {ex.Message}";
-            }
-            return false;
-        }
-
-
-        public static void EnsureFileExists(out string errMsg)
-        {
-            errMsg = "";
-            try
-            {
-                Directory.CreateDirectory(GameSettings.ClanSystemDataFolder);
-
-                if (!File.Exists(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemPvpRoomFile)))
-                {
-                    //Create a clean|empty xml document.
-                    WriteToFilePvpRooms(out string errMsgBackToFile);
-                    errMsg += errMsgBackToFile;
-                }
-
-            }
-            catch (Exception ex)
-            {
-                errMsg += $"Exception occured in trying to ensure that folder : {GameSettings.ClanSystemDataFolder}" +
-                            $" and file : {GameSettings.ClanSystemPvpRoomFile} exists. Exception: {ex.Message}";
             }
         }
 
