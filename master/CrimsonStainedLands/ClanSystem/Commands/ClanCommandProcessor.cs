@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Text.RegularExpressions;
+using CrimsonStainedLands.Extensions;
 
 namespace CrimsonStainedLands.ClanSystem
 {
@@ -9,10 +10,9 @@ namespace CrimsonStainedLands.ClanSystem
         //--- Main doClan
         public static void doClan(Character ch, string arguments)
         {
-
             if (Helper.getNextArg(arguments, out string nextArg, out string remainingArgs))
             {
-                switch (nextArg)
+                switch (nextArg.ToLower())
                 {
                     case "help":
                         {
@@ -104,12 +104,12 @@ namespace CrimsonStainedLands.ClanSystem
                             ch.send("That is not a clan command. Type 'clan help'.");
                             break;
                         }
-                }        
+                }
             }
             else
             {
                 ch.send("Do what with clan? Type 'clan help'.");
-            }
+            }       
         }
     }
 }

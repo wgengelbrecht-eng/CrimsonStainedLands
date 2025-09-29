@@ -11,7 +11,7 @@ namespace CrimsonStainedLands.ClanSystem
         {
             if (Helper.getNextArg(arguments, out string nextArg, out string remainingArgs))
             {
-                switch (nextArg)
+                switch (nextArg.ToLower())
                 {
                     case "help":
                         {
@@ -43,7 +43,7 @@ namespace CrimsonStainedLands.ClanSystem
             else // Only 'pvp' was entered as a command, hench quick switch between pvp modes, 'On' and 'Off'
             {
                 // If on, switch off, if off, switch on.
-                PvpService.CommandPvpOnOff(ch, remainingArgs);   
+                PvpService.CommandPvpOnOff(ch, remainingArgs);
             }
         }
     }
