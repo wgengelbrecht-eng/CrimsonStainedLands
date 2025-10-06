@@ -374,7 +374,7 @@ namespace CrimsonStainedLands
             try
             {
                 var connectionManagerTask = SetupListeningSocket(state);
-
+                Module.LoadModules();
                 using (new LoadTimer("Game loaded"))
                 {
 
@@ -397,6 +397,9 @@ namespace CrimsonStainedLands
                     GuildData.WriteGuildSkillsHtml();
 
                     AreaData.SaveAreaListJson();
+
+                    Module.DataLoaded();
+                    
                     Game.log("Accepting connections... Standard port {0}, SSL Port {1}", Settings.Port, Settings.SSLPort);
                 }
 
@@ -901,6 +904,9 @@ namespace CrimsonStainedLands
 
             //if (pulseCount % (60 * 4) == 0 || pulseCount == 1)
             //    program.Log("TICK :: " + pulseCount / (60 * 4));
+
+            Module.PulseBefore();
+
             if (DateTime.Now > PulseTick.AddMilliseconds(PULSE_TICK * MILLISECONDS_PER_PULSE))
             {
                 PerformTick();
@@ -914,6 +920,8 @@ namespace CrimsonStainedLands
             //AreaData.resetAreas();
 
             UpdateAggro();
+
+            Module.PulseAfter();
         }
 
         private void UpdateObjects()
