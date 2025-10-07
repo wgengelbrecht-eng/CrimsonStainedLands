@@ -1,9 +1,8 @@
+using CrimsonStainedLands;
 using System.Text.RegularExpressions;
-using K4os.Compression.LZ4.Internal;
-using Microsoft.AspNetCore.Builder;
-using Mysqlx;
 
-namespace CrimsonStainedLands.ClanSystem
+
+namespace ClanSystemMod
 {
     public static class ClanService
     {
@@ -1115,15 +1114,22 @@ namespace CrimsonStainedLands.ClanSystem
 
         private static void ListAllClanRoomsForClanName(Character ch, string clanName)
         {
-            string ret = $"{"vNum",10}|{"Belongs to",30}\n";
-            foreach (ClanRoom room in ClanDBService.getAllClanRooms())
+            if (ClanDBService.getNumberOfClanRooms() > 0)
             {
-                if (room.ClanName.Equals(clanName, StringComparison.CurrentCultureIgnoreCase))
+                string ret = $"{"vNum",-10}|{"Belongs to",-30}\n";
+                foreach (ClanRoom room in ClanDBService.getAllClanRooms())
                 {
-                    ret += $"{room.RoomVnum,10}|{room.ClanName,30}\n";
+                    if (room.ClanName.Equals(clanName, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        ret += $"{room.RoomVnum,10}|{room.ClanName,30}\n";
+                    }
                 }
+                ch.send(ret);
             }
-            ch.send(ret);
+            else
+            {
+                ch.send("No clan rooms were found.");
+            }
         }
 
 
@@ -1154,7 +1160,7 @@ namespace CrimsonStainedLands.ClanSystem
 
                                         $"\\g{"add-clan",-30}\\x| {"Create a new clan.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan add-clan 'clan name' 'clan leader' 'clan tag'",-100}\n" +
-                                        $"{"",-30}| {"\\rUsage :\\x clan del-clan 'clan name'",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan add-clan 'clan name'",-100}\n" +
                                         $"\\g{"rem-clan",-30}\\x| {"Delete|remove a clan.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan rem-clan 'clan name'",-100}\n" +
                                         $"\\g{"set-tag",-30}\\x| {"Set or update a clan tag.",-100}\n" +

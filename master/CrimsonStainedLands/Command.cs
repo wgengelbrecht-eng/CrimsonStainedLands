@@ -1,5 +1,4 @@
-﻿using CrimsonStainedLands.ClanSystem;
-using CrimsonStainedLands.Extensions;
+﻿using CrimsonStainedLands.Extensions;
 using CrimsonStainedLands.World;
 using System;
 using System.Collections.Generic;
@@ -488,17 +487,6 @@ namespace CrimsonStainedLands
             Commands.Add(new Command { Name = "suicide", Action = CharacterDoFunctions.DoSuicide, Info = "End your life.", MinimumPosition = Positions.Fighting });
             Commands.Add(new Command { Name = "password", Action = CharacterDoFunctions.DoPassword, Info = "Change your password.", MinimumPosition = Positions.Sleeping });
             Commands.Add(new Command { Name = "delete", Action = CharacterDoFunctions.DoDelete, Info = "Delete your character.", MinimumPosition = Positions.Sleeping });
-
-
-            //------------------[Clan System] <--- Search tag
-            //--- Clan System
-            if (GameSettings.ClanSystemEnabled == true)
-                Commands.Add(new Command { Name = "clan", Action = ClanSystemDoFunction.doClan, Info = "Clan functionality.", MinimumPosition = Positions.Dead });
-          
-            //--- PvP service
-            if (GameSettings.PvpSystemEnabled == true)
-                Commands.Add(new Command { Name = "pvp", Action = PvpDoFunction.doPvp, Info = "Pvp functionality.", MinimumPosition = Positions.Standing });
-            //-------------------------------- End
 
         }
 

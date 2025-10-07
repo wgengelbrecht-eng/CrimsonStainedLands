@@ -2,14 +2,14 @@ using System.Xml;
 using System.Xml.Serialization;
 using FxSsh.Messages;
 
-namespace CrimsonStainedLands.ClanSystem
+namespace ClanSystemMod
 {
     public static class ClanDBService
     {
         private static readonly List<Clan> _clans = [];
         private static readonly List<ClanRoom> _clanRooms = [];
         private static readonly List<ClanCreationRequest> _clanCreationRequets = [];
-        private static readonly List<PvpEnabledRoom> _pvpEnabledRooms = [];
+        //private static readonly List<PvpEnabledRoom> _pvpEnabledRooms = [];
 
 
 
@@ -32,16 +32,8 @@ namespace CrimsonStainedLands.ClanSystem
         public static bool removeClan(string clanName, out string errMsg)
         {
             errMsg = "";
-            int placement = 0;
-            foreach (Clan clan in _clans)
-            {
-                if (clan.Name.Equals(clanName, StringComparison.CurrentCultureIgnoreCase))
-                {
-                    _clans.RemoveAt(placement);
-                    return true;
-                }
-                placement++;
-            }
+            int removedCount = _clans.RemoveAll(c => c.Name.Equals(clanName, StringComparison.CurrentCultureIgnoreCase));
+            if (removedCount > 0) return true;
             errMsg = "No clan by that name was found.";
             return false;
         }
@@ -67,36 +59,21 @@ namespace CrimsonStainedLands.ClanSystem
         public static Clan GetClan(string clanName, out string errMsg)
         {
             errMsg = "";
-            foreach (Clan clan in _clans)
-            {
-                if (clan.Name.Equals(clanName, StringComparison.CurrentCultureIgnoreCase))
-                {
-                    return clan;
-                }
-            }
-            errMsg = "No Clan by that name found.";
-            Clan retClan = null;
-            return retClan;
+            var clan = _clans.FirstOrDefault(c => c.Name.Equals(clanName, StringComparison.CurrentCultureIgnoreCase));
+            if (clan == null)
+                errMsg = "No Clan by that name found.";
+            return clan;
         }
 
 
         public static Clan GetClanByPlayerName(string playerName, out string errMsg)
         {
             errMsg = "";
-            Clan retClan = null;
-            foreach (Clan clan in _clans)
-            {
-                foreach (ClanMember member in clan.Members)
-                {
-                    if (member.playerName == playerName)
-                    {
-                        return clan;
-                    }
-                }
-            }
-            // Player  not found
-            errMsg = "No clans have that player as a member.";
-            return retClan;
+            var clan = _clans.FirstOrDefault(c => c.Members.Any(m => m.playerName.Equals(playerName, StringComparison.CurrentCultureIgnoreCase)));
+
+            if (clan == null)
+                errMsg = "No clans have that player as a member.";
+            return clan;
         }
 
 
@@ -455,6 +432,7 @@ namespace CrimsonStainedLands.ClanSystem
 
 
         // --- Pvp rooms functions
+        /*
         public static void AddPvpEnabledRoom(PvpEnabledRoom room)
         {
             _pvpEnabledRooms.Add(room);
@@ -481,14 +459,7 @@ namespace CrimsonStainedLands.ClanSystem
 
         public static bool IsRoomInPvpEnabledRoomList(int vNum)
         {
-            foreach (PvpEnabledRoom room in _pvpEnabledRooms)
-            {
-                if (room.RoomVnum == vNum)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return _pvpEnabledRooms.Any(room => room.RoomVnum == vNum);
         }
 
 
@@ -584,7 +555,7 @@ namespace CrimsonStainedLands.ClanSystem
         }
 
         //--- End pvp rooms functions
-
+        */
 
         //--- Misc
         public static void EnsureFileExists(out string errMsg)
@@ -615,12 +586,15 @@ namespace CrimsonStainedLands.ClanSystem
                     if (errMsgWriteToFileClanRooms != "")
                         errMsg += errMsgWriteToFileClanRooms;
                 }
+                /*
                 if (!File.Exists(Path.Combine(GameSettings.ClanSystemDataFolder, GameSettings.ClanSystemPvpRoomFile)))
                 {
                     //Create a clean|empty xml document.
-                    WriteToFilePvpRooms(out string errMsgBackToFile);
-                    errMsg += errMsgBackToFile;
+                    WriteToFileClanRooms(out string errMsgWriteToFileClanRooms);
+                    if (errMsgWriteToFileClanRooms != "")
+                        errMsg += errMsgWriteToFileClanRooms;
                 }
+                */
 
             }
             catch (Exception ex)
@@ -628,6 +602,7 @@ namespace CrimsonStainedLands.ClanSystem
                 errMsg += $"Exception occured in trying to ensure that folder : {GameSettings.ClanSystemDataFolder}" +
                             $" and its contents exist. Exception: {ex.Message}";
             }
-        }   
+        }
+              
     }
 }

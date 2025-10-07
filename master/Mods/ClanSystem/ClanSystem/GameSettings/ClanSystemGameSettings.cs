@@ -1,10 +1,13 @@
+using CrimsonStainedLands;
 using System.Reflection;
+using System.IO;
+using System.Xml.Linq;
 
-namespace CrimsonStainedLands.ClanSystem
+namespace ClanSystemMod
 {
     static partial class GameSettings
     {
-        static private string _executableDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        static private string _executableDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
         static public bool ClanSystemEnabled { get; set; } = true;
         static public bool PvpSystemEnabled { get; set; } = true;
         static public int MaxClansAllowed { get; } = 10;

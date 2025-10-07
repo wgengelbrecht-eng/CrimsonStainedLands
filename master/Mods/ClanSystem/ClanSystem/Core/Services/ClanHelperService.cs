@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using CrimsonStainedLands.Extensions;
 
-namespace CrimsonStainedLands.ClanSystem
+namespace ClanSystemMod
 {
     public static class Helper
     {

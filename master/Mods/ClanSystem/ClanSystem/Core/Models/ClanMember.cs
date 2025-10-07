@@ -1,9 +1,10 @@
-namespace CrimsonStainedLands.ClanSystem
+namespace ClanSystemMod
 {
     public class ClanMember
     {
-        public string playerName { get; set; }
-        public ClanRank Rank { get; set; }
+        public string playerName { get; set; } = "NULL";
+        public ClanRank Rank { get; set; } = ClanRank.None;
+    
     }
 
     public enum ClanRank

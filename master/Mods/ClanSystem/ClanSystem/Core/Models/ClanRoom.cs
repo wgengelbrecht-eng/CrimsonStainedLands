@@ -1,4 +1,4 @@
-namespace CrimsonStainedLands.ClanSystem
+namespace ClanSystemMod
 {
     public class ClanRoom
     {

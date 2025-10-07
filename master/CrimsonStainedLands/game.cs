@@ -34,7 +34,6 @@
 *       found in the file /Tartarus/doc/tartarus.doc                       *
 ***************************************************************************/
 
-using CrimsonStainedLands.ClanSystem;
 using CrimsonStainedLands.Extensions;
 using CrimsonStainedLands.World;
 using System;
@@ -311,61 +310,6 @@ namespace CrimsonStainedLands
             // Load corpses and pits before resetting areas so pits aren't duplicated
             ItemData.LoadCorpsesAndPits();
 
-            //------------------[Clan System] <-- Search tag
-            //--- Clan Db
-            ClanDBService.EnsureFileExists(out string errMsgEnsureFileExists);
-            if (errMsgEnsureFileExists != "")
-            {
-                Console.WriteLine(errMsgEnsureFileExists);
-                Console.WriteLine("[Clan System] has been disabled.");
-                GameSettings.ClanSystemEnabled = false; //Run server without a clan system.
-            }
-            //--- Clans
-            if (GameSettings.ClanSystemEnabled)
-            {
-                using (new LoadTimer("ClanSystem Service loaded {0} clans", () => ClanDBService.GetNumberOfClans()))
-                {
-                    ClanDBService.ReadFromFileClans(out string errMsgReadFromFileClans);
-                    if (errMsgReadFromFileClans != "")
-                    {
-                        Console.WriteLine(errMsgReadFromFileClans);
-                        Console.WriteLine("[Clan System] has been disabled.");
-                        GameSettings.ClanSystemEnabled = false; //Run server without a clan system.
-                    }
-                }
-            }
-            //--- End Clans 
-            //--- Clan Rooms
-            if (GameSettings.ClanSystemEnabled)
-            {
-                using (new LoadTimer("ClanSystem Service loaded {0} clan rooms", () => ClanDBService.getNumberOfClanRooms()))
-                { 
-                    ClanDBService.ReadFromFileClanRooms(out string errMsgReadFromClanRooms);
-                    if (errMsgReadFromClanRooms != "")
-                    {
-                        Console.WriteLine(errMsgReadFromClanRooms);
-                        Console.WriteLine("[Clan System] has been disabled.");
-                        GameSettings.ClanSystemEnabled = false; //Run server without a clan system.
-                    }
-                }
-            }
-            //--- End Clan rooms
-            //--- Pvp rooms
-            if (GameSettings.PvpSystemEnabled)
-                {
-                    using (new LoadTimer("ClanSystem PVP Service loaded {0} rooms", () => ClanDBService.GetNumberOfPvpEnabledRooms()))
-                    {
-                        ClanDBService.ReadFromFilePvpRooms(out string errMsgLoadFilePvp);
-                        if (errMsgLoadFilePvp != "")
-                        {
-                            Console.WriteLine(errMsgLoadFilePvp);
-                            Console.WriteLine("[Pvp Service] has been disabled.");
-                            GameSettings.PvpSystemEnabled = false; //Run server without a pvp system.
-                        }
-                    }
-                }
-            //--- End Pvp rooms
-            //--------------------------------- End
         }
         
         private void launch(GameInfo state)

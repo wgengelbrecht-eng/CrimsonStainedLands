@@ -7,13 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CrimsonStainedLands\CrimsonStainedLands.csproj" />
+    <ProjectReference Include="..\..\..\CrimsonStainedLands\CrimsonStainedLands.csproj" />
   </ItemGroup>
 
   <Target Name="CopyFilesToCrimson" AfterTargets="Build">
     <PropertyGroup>
-      <CrimsonOutputDirectory Condition="'$(Configuration)' == 'Debug'">$(SolutionDir)CrimsonStainedLands\bin\Debug\net8.0\</CrimsonOutputDirectory>
-      <CrimsonOutputDirectory Condition="'$(Configuration)' == 'Release'">$(SolutionDir)CrimsonStainedLands\bin\Release\net8.0\</CrimsonOutputDirectory>
+      <CrimsonOutputDirectory>$(ProjectDir)..\..\..\CrimsonStainedLands\bin\$(Configuration)\net8.0\</CrimsonOutputDirectory>
     </PropertyGroup>
 
     <ItemGroup>
@@ -25,12 +24,6 @@
           DestinationFolder="$(CrimsonOutputDirectory)"
           SkipUnchangedFiles="true"
           OverwriteReadOnlyFiles="true" />
-
-    <!--
-    <Copy SourceFiles="$(ProjectDir)modules.xml"
-          DestinationFolder="$(CrimsonOutputDirectory)"
-          SkipUnchangedFiles="true"
-          OverwriteReadOnlyFiles="true" />
-    -->
+          
   </Target>
 </Project>
