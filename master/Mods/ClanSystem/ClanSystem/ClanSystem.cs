@@ -26,6 +26,7 @@ public class ClanSystemModule : CrimsonStainedLands.Module
         });
 
         Module.OnDataLoadedEvent += OnDataLoaded;
+        Module.Character.LoadingEvent += OnCharacterLoading;
     }
 
 
@@ -72,7 +73,22 @@ public class ClanSystemModule : CrimsonStainedLands.Module
                 GameSettings.ClanSystemEnabled = HandleLoadError(errMsgReadClanRooms, "Clan System");
             }
         }
-
+    }
+    
+    private void OnCharacterLoading(CrimsonStainedLands.Character character, XElement element)
+    {
+        ClanMember member = new ClanMember();
+        if (ClanService.IsPlayerInAnyClan(character.Name, out string clanName))
+        {
+            member.playerName = character.Name;
+            member.ClanName = clanName;
+            member.Rank = ClanService.GetPlayerRank(character.Name);
+            character.Variables["ClanMember"] = member;
+        }
+        else
+        {
+            character.Variables["ClanMember"] = null;
+        }
     }
 
 }

@@ -4,7 +4,7 @@ namespace ClanSystemMod
     {
         public string playerName { get; set; } = "NULL";
         public ClanRank Rank { get; set; } = ClanRank.None;
-    
+        public string ClanName{ get; set; } = "NULL";
     }
 
     public enum ClanRank
