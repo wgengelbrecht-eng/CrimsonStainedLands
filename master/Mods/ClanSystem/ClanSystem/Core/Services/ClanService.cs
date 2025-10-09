@@ -1,5 +1,7 @@
 using CrimsonStainedLands;
+using CrimsonStainedLands.World;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 
 namespace ClanSystemMod
@@ -271,6 +273,13 @@ namespace ClanSystemMod
 
         public static void CommandAddMember(Character ch, string arguments)
         {
+            ClanMember clanMember = ch.GetVariable<ClanMember>("clanMember");
+
+            //--- Make sure this character does have a clan member object
+            if (clanMember == null)
+            {
+                ClanMember tmpMember = addClanMemberObject(ch);
+            }
 
             if (ch.Level >= GameSettings.MinLevelRequiredForClanCreation)
             {
@@ -310,7 +319,6 @@ namespace ClanSystemMod
 
         private static void AddMember(Character ch, string clanName, string playerName)
         {
-
             if (IsPlayerInAnyClan(playerName, out string outClanName))
             {
                 ch.send($"This player is part of a clan already. Clan member of : {outClanName}");
@@ -338,7 +346,15 @@ namespace ClanSystemMod
             Clan clan = ClanDBService.GetClan(clanName, out string errMsgGetClan);
             if (clan != null)
             {
-                clan.Members.Add(new ClanMember { playerName = playerName, Rank = ClanRank.GreenHorn });
+                ClanMember tmpMember = new ClanMember();
+                tmpMember.playerName = playerName;
+                tmpMember.Rank = ClanRank.GreenHorn;
+                tmpMember.ClanName = clanName;
+
+                clan.Members.Add(tmpMember);
+
+                findAndAttachClanMemberObject(ch, tmpMember);
+
                 if (ClanDBService.UpdateClanRecord(clan, out string errMsgUpdateClanRecords))
                 {
                     ch.send("Clan member added.");
@@ -395,6 +411,14 @@ namespace ClanSystemMod
                 if (clan != null)
                 {
                     clan.Members.RemoveAll(member => member.playerName.Equals(playerName, StringComparison.CurrentCultureIgnoreCase));
+
+                    ClanMember tmpMember = new ClanMember();
+                    tmpMember.playerName = playerName;
+                    tmpMember.Rank = ClanRank.None;
+                    tmpMember.ClanName = "";
+
+                    findAndAttachClanMemberObject(ch, tmpMember);
+                    
                     if (IsAClanLeader(playerName))
                     {
                         clan.LeaderPlayerName = "";
@@ -471,21 +495,37 @@ namespace ClanSystemMod
 
                             if (member.Rank + 1 == ClanRank.Leader)
                             {
-                                if (getClanLeader(clanName, out string leaderName))
+                                if (ch.Level >= GameSettings.MinLevelRequiredForClanCreation)
                                 {
-                                    if (leaderName != "")
+                                    if (getClanLeader(clanName, out string leaderName))
                                     {
-                                        ch.send("Cannot promote this member to leader. This clan already has a leader.");
-                                        return;
+                                        if (leaderName != "")
+                                        {
+                                            ch.send("Cannot promote this member to leader. This clan already has a leader.");
+                                            return;
+                                        }
+                                        else
+                                        {
+                                            clan.LeaderPlayerName = playerName;
+                                        }
                                     }
-                                    else
-                                    {
-                                        clan.LeaderPlayerName = playerName;
-                                    }
+                                }
+                                else
+                                {
+                                    ch.send("You cannot promote a member to leader. Please start a voting process to ellect a new Leader.");
+                                    return;
                                 }
                             }
 
                             member.Rank += 1;
+
+                            ClanMember tmpMember = new ClanMember();
+                            tmpMember.playerName = playerName;
+                            tmpMember.Rank = member.Rank;
+                            tmpMember.ClanName = clanName;
+
+                            findAndAttachClanMemberObject(ch, tmpMember);
+
                             if (ClanDBService.UpdateClanRecord(clan, out string errMsgUpdateClanRecords))
                             {
                                 ClanDBService.WriteToFileClans(out string errMsgWriteToClans);
@@ -552,18 +592,34 @@ namespace ClanSystemMod
                     {
                         if (member.playerName == playerName)
                         {
+
                             if (member.Rank == ClanRank.GreenHorn)
                             {
                                 ch.send("Cannot demote a member that is a Green Horn. This is the lowest level.");
                                 return;
                             }
 
-                            if (member.Rank == ClanRank.Leader)
-                            {
+                            
+                            if((member.Rank == ClanRank.Leader) && (ch.Level >= GameSettings.MinLevelRequiredForClanCreation))
+                            {   
                                 clan.LeaderPlayerName = "";
                             }
+                            else
+                            {
+                                ch.send("You cannot demote a clan leader. Please start a voting process to ellect a new Leader.");
+                                return;
+                            }
+                            
 
                             member.Rank -= 1;
+
+                            ClanMember tmpMember = new ClanMember();
+                            tmpMember.playerName = playerName;
+                            tmpMember.Rank = member.Rank;
+                            tmpMember.ClanName = clanName;
+
+                            findAndAttachClanMemberObject(ch, tmpMember);
+
                             if (ClanDBService.UpdateClanRecord(clan, out string errMsgUpdateClanRecords))
                             {
                                 ClanDBService.WriteToFileClans(out string errMsgWriteToClans);
@@ -748,19 +804,19 @@ namespace ClanSystemMod
                     foreach (ClanMember member in clan.Members)
                     {
                         if (member.Rank == ClanRank.Leader)
-                            leaderInfo += $"{member.playerName,-30} | \\y(*>>>)\\xLeader\\y(<<<*)\\x\n";
+                            leaderInfo += $"{member.playerName,-30} | \\y(***)\\xLeader\\y(***)\\x\n";
 
                         if (member.Rank == ClanRank.Captain)
-                            captainInfo += $"{member.playerName,-30} | \\r(>>>)\\xCaptain\\r(<<<)\\x\n";
+                            captainInfo += $"{member.playerName,-30} | \\r(<**)\\xCaptain\\r(**>)\\x\n";
 
                         if (member.Rank == ClanRank.Lieutenant)
-                            lieutenantInfo += $"{member.playerName,-30} | \\c(>>)\\xLieutenant\\c(<<)\\x\n";
+                            lieutenantInfo += $"{member.playerName,-30} | \\c(<*)\\xLieutenant\\c(*>)\\x\n";
 
                         if (member.Rank == ClanRank.Member)
-                            memberInfo += $"{member.playerName,-30} | \\b(+)\\xMember\\b(+)\\x\n";
+                            memberInfo += $"{member.playerName,-30} | \\b(<)\\xMember\\b(>)\\x\n";
 
                         if (member.Rank == ClanRank.GreenHorn)
-                            greenHornInfo += $"{member.playerName,-30} | \\g(-)\\xGreen-horn\\g(-)\\x\n";
+                            greenHornInfo += $"{member.playerName,-30} | \\g(^)\\xGreen-horn\\g(^)\\x\n";
 
                     }
 
@@ -865,9 +921,9 @@ namespace ClanSystemMod
                         if (IsPlayerInAnyClan(ch.Name, out string outClanName))
                         {
                             ch.send("You are part of a clan already. You must leave your current clan first.");
-                            return;  
+                            return;
                         }
-                        
+
                         if (!HasClanRequest(playerName))
                         {
                             ClanCreationRequest(ch, playerName, clanName, clanTag);
@@ -1009,7 +1065,7 @@ namespace ClanSystemMod
                     {
                         ch.send("That is not a number. Type 'clan help'.");
                         return;
-                    }    
+                    }
 
                     if (!HasClanRoom(vNumber))
                     {
@@ -1143,6 +1199,207 @@ namespace ClanSystemMod
             ch.send(ret);
         }
 
+        public static void CommandStartVote(Character ch, string arguments)
+        {
+            if (!IsAClanLeader(ch.Name))
+            {
+                ch.send("Only the clan leader can start a vote for a new leader.");
+                return;
+            }
+
+            string clanName = GetClanName(ch.Name);
+            Clan clan = ClanDBService.GetClan(clanName, out _);
+
+            if (clan.IsVotingActive)
+            {
+                ch.send($"A vote is already in progress. It will end on {clan.VotingEnds.Value:g}.");
+                return;
+            }
+
+            clan.VotingEnds = DateTime.Now.AddDays(2);
+            clan.Votes.Clear();
+            ClanDBService.WriteToFileClans(out _);
+
+            ch.send($"You have started a vote for a new clan leader. Captains have 2 days to cast their vote with 'clan vote <player>'.");
+            
+            // Announce to online clan members
+            var onlinePlayers = Game.Instance.Info.Connections.Where(p => p.state == Player.ConnectionStates.Playing);
+            foreach (var player in onlinePlayers)
+            {
+                if (IsPlayerInClan(clanName, player.Name) && player != ch)
+                {
+                    player.send($"\\y{ch.Name} has initiated a vote for a new clan leader! Voting is open for 2 days.\\x");
+                }
+            }
+        }
+
+        public static void CommandVote(Character ch, string arguments)
+        {
+            string clanName = GetClanName(ch.Name);
+            if (string.IsNullOrEmpty(clanName))
+            {
+                ch.send("You are not in a clan.");
+                return;
+            }
+
+            Clan clan = ClanDBService.GetClan(clanName, out _);
+
+            if (!clan.IsVotingActive)
+            {
+                ch.send("There is no active vote for a new leader at this time.");
+                return;
+            }
+
+            if (GetPlayerRank(ch.Name) != ClanRank.Captain)
+            {
+                ch.send("Only captains can vote for a new leader.");
+                return;
+            }
+
+            if (!Helper.getNextArg(arguments, out string candidateName, out _))
+            {
+                ch.send("Who do you want to vote for? Usage: clan vote <player>");
+                return;
+            }
+
+            if (!IsPlayerInClan(clanName, candidateName))
+            {
+                ch.send($"'{candidateName}' is not a member of your clan.");
+                return;
+            }
+
+            var existingVote = clan.Votes.FirstOrDefault(v => v.VoterName.Equals(ch.Name, StringComparison.OrdinalIgnoreCase));
+            if (existingVote != null)
+            {
+                existingVote.CandidateName = candidateName;
+                ch.send($"You have changed your vote to {candidateName}.");
+            }
+            else
+            {
+                clan.Votes.Add(new ClanVote { VoterName = ch.Name, CandidateName = candidateName });
+                ch.send($"You have voted for {candidateName} to be the new leader.");
+            }
+
+            ClanDBService.WriteToFileClans(out _);
+        }
+
+
+        //--- This will both check the current status of the voting process and process the results
+        //--- when the period has run out.
+        public static void CommandTally(Character ch, string arguments)
+        {
+            string clanName = GetClanName(ch.Name);
+            if (string.IsNullOrEmpty(clanName))
+            {
+                ch.send("You are not in a clan.");
+                return;
+            }
+
+            Clan clan = ClanDBService.GetClan(clanName, out _);
+            if (clan == null)
+            {
+                ch.send("Could not find your clan data.");
+                return;
+            }
+
+            // If voting is currently active, show the tally.
+            if (clan.IsVotingActive)
+            {
+                ch.send($"A vote for a new leader is in progress. It ends on {clan.VotingEnds.Value:g}.");
+                if (clan.Votes.Count == 0)
+                {
+                    ch.send("No votes have been cast yet.");
+                    return;
+                }
+
+                var tally = clan.Votes
+                    .GroupBy(v => v.CandidateName, StringComparer.OrdinalIgnoreCase)
+                    .Select(group => new { Candidate = group.Key, Count = group.Count() })
+                    .OrderByDescending(x => x.Count);
+
+                string result = "Current votes:\n";
+                foreach (var entry in tally)
+                {
+                    result += $"{entry.Candidate}: {entry.Count} vote(s)\n";
+                }
+                ch.send(result);
+            }
+            // If voting is not active, but was (VotingEnds is in the past), process the results.
+            else if (clan.VotingEnds.HasValue)
+            {
+                ProcessVoteResults(ch, clan);
+            }
+            // Otherwise, no vote is happening.
+            else
+            {
+                ch.send("There is no active vote for a new leader at this time.");
+            }
+        }
+
+        private static void ProcessVoteResults(Character ch, Clan clan)
+        {
+            if (clan.Votes.Count == 0)
+            {
+                ch.send("Voting has ended. No votes were cast.");
+                clan.VotingEnds = null;
+                ClanDBService.WriteToFileClans(out _);
+                return;
+            }
+
+            var tally = clan.Votes
+                .GroupBy(v => v.CandidateName, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new { Candidate = group.Key, Count = group.Count() })
+                .OrderByDescending(x => x.Count)
+                .ToList();
+
+            var winner = tally.FirstOrDefault();
+            var isTie = tally.Count > 1 && tally[0].Count == tally[1].Count;
+
+            if (isTie)
+            {
+                ch.send("Voting has ended in a tie! No new leader has been chosen.");
+            }
+            else
+            {
+                string oldLeaderName = clan.LeaderPlayerName;
+                ClanMember oldLeaderMember = clan.Members.FirstOrDefault(m => m.playerName.Equals(oldLeaderName, StringComparison.OrdinalIgnoreCase));
+                ClanMember newLeaderMember = clan.Members.FirstOrDefault(m => m.playerName.Equals(winner.Candidate, StringComparison.OrdinalIgnoreCase));
+
+                if (newLeaderMember == null)
+                {
+                    ch.send("An error occurred: The winning candidate is no longer in the clan.");
+                }
+                else
+                {
+                    // Demote old leader
+                    if (oldLeaderMember != null)
+                    {
+                        oldLeaderMember.Rank = ClanRank.Captain;
+                    }
+
+                    // Promote new leader
+                    newLeaderMember.Rank = ClanRank.Leader;
+                    clan.LeaderPlayerName = newLeaderMember.playerName;
+
+                    string announcement = $"\\yThe vote for a new leader has concluded! {newLeaderMember.playerName} is the new leader of {clan.Name}!\\x";
+                    ch.send(announcement);
+                    // Announce to online clan members
+                    var onlinePlayers = Game.Instance.Info.Connections.Where(p => p.state == Player.ConnectionStates.Playing);
+                    foreach (var player in onlinePlayers)
+                    {
+                        if (IsPlayerInClan(clan.Name, player.Name) && player != ch)
+                        {
+                            player.send(announcement);
+                        }
+                    }
+                }
+            }
+
+            // Reset voting
+            clan.VotingEnds = null;
+            clan.Votes.Clear();
+            ClanDBService.WriteToFileClans(out _);
+        }
 
         public static void CommandHelp(Character ch, string arguments)
         {
@@ -1153,7 +1410,7 @@ namespace ClanSystemMod
             // Only send this help list to 'Imm|Admins'
             if (ch.Level >= GameSettings.MinLevelRequiredForClanCreation)
             {
-                clanHelpAdminPlayer =   $"\\rHere follows the clan commands for Admin players.\\x\n" +
+                clanHelpAdminPlayer = $"\\rHere follows the clan commands for Admin players.\\x\n" +
                                         $"\\g{"list",-30}\\x| {"List all clans.",-100}\n" +
                                         $"\\g{"members",-30}\\x| {"List the members with their ranks of a specified clan.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan members 'clan name'",-100}\n" +
@@ -1174,6 +1431,12 @@ namespace ClanSystemMod
                                         $"{"",-30}| {"\\rUsage :\\x clan rem-member 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"promote",-30}\\x| {"Promote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
+
+                                        $"\\g{"startvote",-30}\\x| {"Start a vote for a new clan leader.",-100}\n" +
+                                        $"\\g{"vote",-30}\\x| {"Vote for a new clan leader (Captains only).",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan vote 'player name'",-100}\n" +
+                                        $"\\g{"tally",-30}\\x| {"Check the status of an ongoing vote or see the results.",-100}\n" +
+
                                         $"{"",-30}| {"\\rUsage :\\x clan promote 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"demote",-30}\\x| {"Demote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
@@ -1199,7 +1462,7 @@ namespace ClanSystemMod
             // Only send this help list to 'clan leader' ranked players
             else if (ClanService.GetPlayerRank(ch.Name) == ClanRank.Leader)
             {
-                clanHelpLeaderPlayer =  $"\\rHere follows the clan commands for players of rank Leader.\\x\n" +
+                clanHelpLeaderPlayer = $"\\rHere follows the clan commands for players of rank Leader.\\x\n" +
                                         $"\\g{"list",-30}\\x| {"List all clans.",-100}\n" +
                                         $"\\g{"members",-30}\\x| {"List the members with their ranks of a specified clan.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan members 'clan name'",-100}\n" +
@@ -1213,6 +1476,12 @@ namespace ClanSystemMod
                                         $"{"",-30}| {"\\rUsage :\\x clan rem-player 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"promote",-30}\\x| {"Promote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
+
+                                        $"\\g{"startvote",-30}\\x| {"Start a vote for a new clan leader.",-100}\n" +
+                                        $"\\g{"vote",-30}\\x| {"Vote for a new clan leader (Captains only).",-100}\n" +
+                                        $"{"",-30}| {"\\rUsage :\\x clan vote 'player name'",-100}\n" +
+                                        $"\\g{"tally",-30}\\x| {"Check the status of an ongoing vote or see the results.",-100}\n" +
+
                                         $"{"",-30}| {"\\rUsage :\\x clan promote 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"demote",-30}\\x| {"Demote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
@@ -1225,7 +1494,7 @@ namespace ClanSystemMod
             // Only send this help list to clan members of rank 'captain'
             else if (ClanService.GetPlayerRank(ch.Name) == ClanRank.Leader - 1)
             {
-                clanHelpLeaderPlayer =  $"\\rHere follows the clan commands for players of rank Captain.\\x\n" +
+                clanHelpLeaderPlayer = $"\\rHere follows the clan commands for players of rank Captain.\\x\n" +
                                         $"\\g{"list",-30}\\x| {"List all clans.",-100}\n" +
                                         $"\\g{"members",-30}\\x| {"List the members with their ranks of a specified clan.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan members 'clan name'",-100}\n" +
@@ -1235,6 +1504,10 @@ namespace ClanSystemMod
                                         $"{"",-30}| {"\\rUsage :\\x clan rem-member 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"promote",-30}\\x| {"Promote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
+
+                                        $"\\g{"tally",-30}\\x| {"Check the status of an ongoing vote.",-100}\n" +
+                                        $"\\g{"vote",-30}\\x| {"Vote for a new clan leader.",-100}\n" +
+
                                         $"{"",-30}| {"\\rUsage :\\x clan promote 'clan name' 'player name'",-100}\n" +
                                         $"\\g{"demote",-30}\\x| {"Demote a player in a clan.",-100}\n" +
                                         $"{"",-30}| {"Repeat this call untill the player reaches the required rank.",-100}\n" +
@@ -1252,6 +1525,8 @@ namespace ClanSystemMod
                                         $"\\g{"members",-30}\\x| {"List the members with their ranks of a specified clan.",-100}\n" +
                                         $"{"",-30}| {"\\rUsage :\\x clan members 'clan name'",-100}\n" +
                                         $"\\g{"member-info",-30}\\x| {"Get the rank of a player.",-100}\n" +
+                                        $"\\g{"tally",-30}\\x| {"Check the status of an ongoing vote.",-100}\n" +
+
                                         $"{"",-30}| {"\\rUsage :\\x clan member-info 'player name'",-100}\n" +
                                         $"\\g{"request",-30}\\x| {"Request the immortals to create a clan for you.",-100}\n" +
                                         $"{"",-30}| {"You will have to be level 30 and above to do so.",-100}\n" +
@@ -1260,6 +1535,173 @@ namespace ClanSystemMod
                                         $"{"",-30}| {"\\rUsage :\\x clan del-request",-100}\n";
 
                 ch.send(clanHelpNonAdminPlayer);
+            }
+        }
+
+        ///--- Logic for ClanSystem.cs
+        public static void OnCharacterEnterRoom(CrimsonStainedLands.Character character, RoomData oldRoom, RoomData newRoom)
+        {
+
+            //--- Lets make sure that the current player does have a clan member object.
+            ClanMember clanMember = character.GetVariable<ClanMember>("ClanMember");
+            if (clanMember == null)
+            {
+                clanMember = addClanMemberObject(character);
+            }
+
+            //--- Lets make sure that the current room has a clan room object.
+            ClanRoom clanRoom = newRoom.GetVariable<ClanRoom>("ClanRoom");
+            if (clanRoom == null)
+            {
+                clanRoom = addClanRoomObject(newRoom);
+            }
+
+            //--- Make sure only clan members can exist|roam their respective clan rooms. Remove all other 
+            //--- players or characters that does not belong to that clan.  
+            if (clanRoom.ClanName != "" && clanRoom.RoomVnum != -1)
+            {
+                bool notAllowed = false;
+                if (clanMember.ClanName == "")
+                {
+                    notAllowed = true;
+                }
+                if (!clanRoom.ClanName.Equals(clanMember.ClanName, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    notAllowed = true;
+                }
+
+                if (notAllowed)
+                {
+                    character.Act($"A \\cmagical\\x force surrounds {character.Name} teleporting him away!", type: ActType.ToRoom);
+                    character.RemoveCharacterFromRoom();
+                    character.AddCharacterToRoom(oldRoom);
+                    character.Act($"a \\cmagical\\x force has teleported {character.Name} here for entering a clan members only room!", type: ActType.ToRoom);
+                    character.send("You have been teleported! You cannot enter a clan room if you are not a member of that clan!\r\n");
+                }
+            }
+        }
+
+
+        public static void OnCharacterLoading(CrimsonStainedLands.Character character, XElement element)
+        {
+            //---Attach clan member object to player, does not save to file when character is saved.
+            ClanMember member = new ClanMember();
+            if (ClanService.IsPlayerInAnyClan(character.Name, out string clanName))
+            {
+                member.playerName = character.Name;
+                member.ClanName = clanName;
+                member.Rank = ClanService.GetPlayerRank(character.Name);
+                character.Variables["ClanMember"] = member;
+            }
+            else
+            {
+                ClanMember? nullMember = addClanMemberObject(character);
+            }
+        }
+
+
+        public static void OnDataLoaded()
+        {
+            // A helper function to handle loading errors consistently.
+            bool HandleLoadError(string errorMessage, string systemName)
+            {
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    Console.WriteLine(errorMessage);
+                    Console.WriteLine($"[{systemName}] has been disabled due to a loading error.");
+                    return false;
+                }
+                return true;
+            }
+
+
+            //--- Initialize Clan System
+            ClanDBService.EnsureFileExists(out string errMsgEnsureFile);
+            GameSettings.ClanSystemEnabled = HandleLoadError(errMsgEnsureFile, "Clan System");
+
+            if (GameSettings.ClanSystemEnabled)
+            {
+                using (new LoadTimer("ClanSystem Service loaded {0} clans", () => ClanDBService.GetNumberOfClans()))
+                {
+                    ClanDBService.ReadFromFileClans(out string errMsgReadClans);
+                    GameSettings.ClanSystemEnabled = HandleLoadError(errMsgReadClans, "Clan System");
+                }
+            }
+
+            if (GameSettings.ClanSystemEnabled)
+            {
+                using (new LoadTimer("ClanSystem Service loaded {0} clan rooms", () => ClanDBService.getNumberOfClanRooms()))
+                {
+                    ClanDBService.ReadFromFileClanRooms(out string errMsgReadClanRooms);
+                    GameSettings.ClanSystemEnabled = HandleLoadError(errMsgReadClanRooms, "Clan System");
+                }
+            }
+
+            //--- Attach clan room object to rooms, does not save to file when roomdata object is saved.
+            using (new LoadTimer("ClanSystem attached clan room object to rooms."))
+            {
+                if (GameSettings.ClanSystemEnabled)
+                {
+                    foreach (RoomData room in RoomData.Rooms.Values)
+                    {
+                        bool foundClanRoom = false;
+                        foreach (ClanRoom clanRoom in ClanDBService.getAllClanRooms())
+                        {
+                            if (clanRoom.RoomVnum == room.Vnum)
+                            {
+                                room.Variables["ClanRoom"] = clanRoom;
+                                foundClanRoom = true;
+                                break;
+                            }
+                        }
+
+                        if (!foundClanRoom)
+                        {
+                            ClanRoom? nullRoom = addClanRoomObject(room);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public static ClanRoom addClanRoomObject(RoomData room)
+        {
+            ClanRoom clanRoom = new ClanRoom();
+            clanRoom.RoomVnum = -1;
+            clanRoom.ClanName = "";
+            room.Variables["ClanRoom"] = clanRoom;
+            return clanRoom;
+        }
+
+
+        public static ClanMember addClanMemberObject(CrimsonStainedLands.Character character)
+        {
+            ClanMember clanMember = new ClanMember();
+            clanMember.playerName = character.Name;
+            clanMember.ClanName = "";
+            clanMember.Rank = ClanRank.None;
+            character.Variables["ClanMember"] = clanMember;
+            return clanMember;
+        }
+
+
+        public static void findAndAttachClanMemberObject(CrimsonStainedLands.Character character, ClanMember clanMemberObject)
+        {
+            var onlinePlayers = Game.Instance.Info.Connections.Where(p => p.state == Player.ConnectionStates.Playing);
+
+            // Iterate through the list of online players.
+            foreach (var player in onlinePlayers)
+            {
+                if (character.Name == player.Name)
+                {
+                    if(!character.Variables.ContainsKey("ClanMember"))
+                    {
+                        addClanMemberObject(character);
+                    } 
+                    character.Variables["ClanMember"] = clanMemberObject;
+                    break;
+                }
             }
         }
     }

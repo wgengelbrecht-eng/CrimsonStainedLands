@@ -100,6 +100,21 @@ namespace ClanSystemMod
                             ClanService.CommandDeleteClanRoom(ch, remainingArgs);
                             break;
                         }
+                    case "startvote":
+                        {
+                            ClanService.CommandStartVote(ch, remainingArgs);
+                            break;
+                        }
+                    case "vote":
+                        {
+                            ClanService.CommandVote(ch, remainingArgs);
+                            break;
+                        }
+                    case "tally":
+                        {
+                            ClanService.CommandTally(ch, remainingArgs);
+                            break;
+                        }
                     default:
                         {
                             ch.send("That is not a clan command. Type 'clan help'.");

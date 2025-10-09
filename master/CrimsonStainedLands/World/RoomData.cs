@@ -161,7 +161,20 @@ namespace CrimsonStainedLands.World
         public List<NLuaPrograms.NLuaProgram> LuaPrograms = new List<NLuaPrograms.NLuaProgram>();
         public int MaxLevel = 60;
         public int MinLevel = 0;
-        //private int light;
+
+        /// <summary>
+        /// These variables are not automatically saved. Hook save events to save them if needed.
+        /// </summary>
+        [JsonIgnore]
+        public Dictionary<string, object> Variables { get; } = new Dictionary<string, object>();
+
+        public T GetVariable<T>(string name)
+        {
+            if (Variables.ContainsKey(name) && Variables[name] is T)
+                return (T)Variables[name];
+            return default(T);
+        }
+        
 
         public string Description
         {

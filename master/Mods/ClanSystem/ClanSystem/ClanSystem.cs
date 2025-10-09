@@ -27,6 +27,7 @@ public class ClanSystemModule : CrimsonStainedLands.Module
 
         Module.OnDataLoadedEvent += OnDataLoaded;
         Module.Character.LoadingEvent += OnCharacterLoading;
+        Module.Character.OnEnterRoomEvent += OnCharacterEnterRoom;
     }
 
 
@@ -36,59 +37,37 @@ public class ClanSystemModule : CrimsonStainedLands.Module
         ClanSystemDoFunction.doClan(ch, arguments);
     }
 
+    public static void OnCharacterEnterRoom(CrimsonStainedLands.Character character, RoomData oldRoom, RoomData newRoom)
+    {
+        ClanService.OnCharacterEnterRoom(character, oldRoom, newRoom);
+
+        /*
+        //--- For testing, remove at later stage
+        ClanMember member = character.GetVariable<ClanMember>("ClanMember");
+        ClanRoom room = newRoom.GetVariable<ClanRoom>("ClanRoom");
+
+        if (member != null)
+        {
+            character.send($"ClanMember object : {member.playerName} | {member.Rank} | {member.ClanName}\n");
+        }
+
+        if (room != null)
+        {
+            character.send($"ClanRoom object : {room.RoomVnum} | {room.ClanName}");
+        }
+        */
+    }
+
+
 
     private void OnDataLoaded()
     {
-        // A helper function to handle loading errors consistently.
-        bool HandleLoadError(string errorMessage, string systemName)
-        {
-            if (!string.IsNullOrEmpty(errorMessage))
-            {
-                Console.WriteLine(errorMessage);
-                Console.WriteLine($"[{systemName}] has been disabled due to a loading error.");
-                return false;
-            }
-            return true;
-        }
-
-
-        //--- Initialize Clan System
-        ClanDBService.EnsureFileExists(out string errMsgEnsureFile);
-        GameSettings.ClanSystemEnabled = HandleLoadError(errMsgEnsureFile, "Clan System");
-
-        if (GameSettings.ClanSystemEnabled)
-        {
-            using (new LoadTimer("ClanSystem Service loaded {0} clans", () => ClanDBService.GetNumberOfClans()))
-            {
-                ClanDBService.ReadFromFileClans(out string errMsgReadClans);
-                GameSettings.ClanSystemEnabled = HandleLoadError(errMsgReadClans, "Clan System");
-            }
-        }
-
-        if (GameSettings.ClanSystemEnabled)
-        {
-            using (new LoadTimer("ClanSystem Service loaded {0} clan rooms", () => ClanDBService.getNumberOfClanRooms()))
-            {
-                ClanDBService.ReadFromFileClanRooms(out string errMsgReadClanRooms);
-                GameSettings.ClanSystemEnabled = HandleLoadError(errMsgReadClanRooms, "Clan System");
-            }
-        }
+        ClanService.OnDataLoaded();
     }
-    
+
+
     private void OnCharacterLoading(CrimsonStainedLands.Character character, XElement element)
     {
-        ClanMember member = new ClanMember();
-        if (ClanService.IsPlayerInAnyClan(character.Name, out string clanName))
-        {
-            member.playerName = character.Name;
-            member.ClanName = clanName;
-            member.Rank = ClanService.GetPlayerRank(character.Name);
-            character.Variables["ClanMember"] = member;
-        }
-        else
-        {
-            character.Variables["ClanMember"] = null;
-        }
+        ClanService.OnCharacterLoading(character, element);
     }
-
 }
